@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.matyrobbrt.mirouters.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "CompiledEnergyDistributorModuleMixin",
+    "CompiledEnergyOutputModuleMixin",
+    "CompiledModuleAccessor",
+    "EnergyDistributorModuleMixin",
+    "RouterBEMixin",
+    "RouterContainerMixin",
+    "RouterScreenMixin",
+    "RouterUpgradeHandlerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
