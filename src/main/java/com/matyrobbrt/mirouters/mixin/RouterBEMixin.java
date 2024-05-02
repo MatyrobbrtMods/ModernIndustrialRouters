@@ -18,13 +18,15 @@ public abstract class RouterBEMixin extends BlockEntity {
         super(pType, pPos, pBlockState);
     }
 
+    @Inject(at = @At("TAIL"), method = "processClientSync")
+    private void updateEUClientSync(CompoundTag compound, CallbackInfo ci) {
+        getData(MIRouters.STORAGE).update();
+        level.invalidateCapabilities(worldPosition);
+    }
+
     @Inject(method = "compileUpgrades", at = @At(value = "INVOKE", target = "Lme/desht/modularrouters/block/tile/ModularRouterBlockEntity$RouterEnergyBuffer;updateForEnergyUpgrades(I)V", shift = At.Shift.AFTER))
     private void compileEU(CallbackInfo ci) {
         getData(MIRouters.STORAGE).update();
-    }
-
-    @Inject(method = "processClientSync", at = @At("TAIL"))
-    private void processClientSyncForEU(CompoundTag compound, CallbackInfo ci) {
-        //getData(MIRouters.STORAGE).update();
+        level.invalidateCapabilities(worldPosition);
     }
 }

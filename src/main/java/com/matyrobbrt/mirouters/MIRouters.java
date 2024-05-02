@@ -1,48 +1,66 @@
 package com.matyrobbrt.mirouters;
 
-import aztech.modern_industrialization.MICapabilities;
 import aztech.modern_industrialization.api.energy.CableTier;
 import aztech.modern_industrialization.api.energy.EnergyApi;
 import aztech.modern_industrialization.api.energy.MIEnergyStorage;
-import com.matyrobbrt.mirouters.item.EUOutputModule;
+import com.matyrobbrt.mirouters.client.ClientMIRouters;
 import com.matyrobbrt.mirouters.item.EUUpgrade;
-import dev.technici4n.grandpower.api.ILongEnergyStorage;
-import me.desht.modularrouters.ModularRouters;
 import me.desht.modularrouters.block.tile.ModularRouterBlockEntity;
-import me.desht.modularrouters.client.util.TintColor;
 import me.desht.modularrouters.core.ModBlockEntities;
 import me.desht.modularrouters.core.ModItems;
-import me.desht.modularrouters.item.MRBaseItem;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.RecipeProvider;
+import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.util.Mth;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.ItemLike;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.attachment.IAttachmentHolder;
 import net.neoforged.neoforge.attachment.IAttachmentSerializer;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.data.LanguageProvider;
+import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-@Mod(MIRouters.MODID)
-public class MIRouters
-{
-    // Define mod id in a common place for everything to reference
-    public static final String MODID = "modernindustrialrouters";
-    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
-    public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, MODID);
-    public static final DeferredItem<EUUpgrade> LV = ITEMS.register("lv_upgrade", () -> new EUUpgrade(CableTier.LV));
-    public static final DeferredItem<EUOutputModule> EU_OUTPUT = ITEMS.register("eu_output_module", EUOutputModule::new);
-    public static final List<DeferredItem<EUUpgrade>> UPGRADES = List.of(LV);
+@Mod(MIRouters.MOD_ID)
+public class MIRouters {
+    public static final String MOD_ID = "modernindustrialrouters";
+    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MOD_ID);
+    public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, MOD_ID);
+
+    // Max speed should be able to power one machine
+    public static final DeferredItem<EUUpgrade> LV = ITEMS.register("lv_upgrade", () -> new EUUpgrade(CableTier.LV, 256L * 5, 32L * 2));
+
+    // Basic upgrade is 2 EU per upgrade
+    public static final DeferredItem<EUUpgrade> MV = ITEMS.register("mv_upgrade", () -> new EUUpgrade(CableTier.MV, 1024L * 5, 32L * 2 * (2 * 64)));
+
+    // Advanced upgrade is 8 EU per upgrade
+    public static final DeferredItem<EUUpgrade> HV = ITEMS.register("hv_upgrade", () -> new EUUpgrade(CableTier.HV, 8192L * 5, 32L * 2 * (8 * 64)));
+
+    // Turbo upgrade is 32 EU per upgrade
+    public static final DeferredItem<EUUpgrade> EV = ITEMS.register("ev_upgrade", () -> new EUUpgrade(CableTier.EV, 65536L * 5, 32L * 2 * (32 * 64)));
+
+    // Highly advanced upgrade is 128 EU per upgrade
+    public static final DeferredItem<EUUpgrade> SUPERCONDUCTOR = ITEMS.register("superconductor_upgrade", () -> new EUUpgrade(CableTier.SUPERCONDUCTOR, (65536L * 16L) * 5, 32L * 2 * (128 * 64) * 100L));
+
+    public static final List<DeferredItem<EUUpgrade>> UPGRADES = List.of(LV, MV, HV, EV, SUPERCONDUCTOR);
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<EnergyStorage>> STORAGE = ATTACHMENTS.register("eu_energy", () -> AttachmentType.builder((holder) -> new EnergyStorage((ModularRouterBlockEntity) holder))
             .serialize(new IAttachmentSerializer<>() {
                 @Override
@@ -65,17 +83,13 @@ public class MIRouters
                 }
             }).build());
 
-    public MIRouters(IEventBus bus) {
+    public MIRouters(IEventBus bus, Dist dist) {
         ITEMS.register(bus);
         ATTACHMENTS.register(bus);
 
-        bus.addListener((final RegisterColorHandlersEvent.Item event) -> {
-            event.register((stack, idx) -> switch (idx) {
-                case 0, 2 -> TintColor.WHITE.getRGB();
-                case 1 -> ((ModItems.ITintable) stack.getItem()).getItemTint().getRGB();
-                default -> TintColor.BLACK.getRGB();  // shouldn't get here
-            }, LV.asItem(), EU_OUTPUT.asItem());
-        });
+        if (dist.isClient()) {
+            ClientMIRouters.setup(bus);
+        }
 
         bus.addListener((final RegisterCapabilitiesEvent event) -> {
             event.registerBlockEntity(EnergyApi.SIDED, ModBlockEntities.MODULAR_ROUTER.get(), (be, abc) -> {
@@ -85,6 +99,92 @@ public class MIRouters
                 return new InsertOnlyTrStorage(be.getEnergyStorage());
             });
         });
+
+        final var key = ResourceKey.create(Registries.CREATIVE_MODE_TAB, new ResourceLocation("modularrouters:default"));
+        bus.addListener((final BuildCreativeModeTabContentsEvent event) -> {
+            if (event.getTabKey() == key) {
+                UPGRADES.forEach(event::accept);
+            }
+        });
+
+        bus.addListener((final GatherDataEvent event) -> {
+            event.getGenerator().addProvider(event.includeClient(), new LanguageProvider(event.getGenerator().getPackOutput(), MOD_ID, "en_us") {
+                @Override
+                protected void addTranslations() {
+                    add(LV.value(), "LV Energy Upgrade");
+                    add(HV.value(), "HV Energy Upgrade");
+                    add(MV.value(), "MV Energy Upgrade");
+                    add(EV.value(), "EV Energy Upgrade");
+                    add(SUPERCONDUCTOR.value(), "Superconductor Energy Upgrade");
+
+                    UPGRADES.forEach(up -> add(
+                            make(up), "Makes energy modules in a router behave as if they are transferring Modern Industrialisation EU of tier %d\nIncreases a router's energy buffer capacity by %d EU and transfer rate by %d EU/router tick"
+                    ));
+
+                    add("modernindustrialrouters.in_gui.eu_upgrade", "• This router's energy capacity: %d EU\n• This router's transfer rate: %d EU/router tick");
+                }
+
+                private String make(ItemLike itemLike) {
+                    return "modularrouters.itemText.usage.item." + BuiltInRegistries.ITEM.getKey(itemLike.asItem()).getPath();
+                }
+            });
+
+            event.getGenerator().addProvider(event.includeServer(), new RecipeProvider(event.getGenerator().getPackOutput()) {
+                @Override
+                protected void buildRecipes(RecipeOutput output) {
+                    ShapedRecipeBuilder.shaped(RecipeCategory.MISC, LV)
+                            .pattern("CCC")
+                            .pattern(" U ")
+                            .pattern("CCC")
+                            .define('C', miItem("tin_cable"))
+                            .define('U', ModItems.ENERGY_UPGRADE)
+                            .unlockedBy("has_item", has(ModItems.ENERGY_UPGRADE))
+                            .save(output);
+
+                    ShapedRecipeBuilder.shaped(RecipeCategory.MISC, MV)
+                            .pattern("CCC")
+                            .pattern(" U ")
+                            .pattern("CCC")
+                            .define('C', miItem("electrum_cable"))
+                            .define('U', ModItems.ENERGY_UPGRADE)
+                            .unlockedBy("has_item", has(ModItems.ENERGY_UPGRADE))
+                            .save(output);
+
+                    ShapedRecipeBuilder.shaped(RecipeCategory.MISC, HV)
+                            .pattern("CCC")
+                            .pattern(" U ")
+                            .pattern("CCC")
+                            .define('C', miItem("aluminum_cable"))
+                            .define('U', ModItems.ENERGY_UPGRADE)
+                            .unlockedBy("has_item", has(ModItems.ENERGY_UPGRADE))
+                            .save(output);
+
+                    ShapedRecipeBuilder.shaped(RecipeCategory.MISC, EV)
+                            .pattern("CCC")
+                            .pattern(" U ")
+                            .pattern("CCC")
+                            .define('C', miItem("annealed_copper_cable"))
+                            .define('U', ModItems.ENERGY_UPGRADE)
+                            .unlockedBy("has_item", has(ModItems.ENERGY_UPGRADE))
+                            .save(output);
+
+                    ShapedRecipeBuilder.shaped(RecipeCategory.MISC, SUPERCONDUCTOR)
+                            .pattern("CCC")
+                            .pattern(" U ")
+                            .pattern("CCC")
+                            .define('C', miItem("superconductor_cable"))
+                            .define('U', ModItems.ENERGY_UPGRADE)
+                            .unlockedBy("has_item", has(ModItems.ENERGY_UPGRADE))
+                            .save(output);
+                }
+
+                private Item miItem(String name) {
+                    return BuiltInRegistries.ITEM.get(new ResourceLocation("modern_industrialization", name));
+                }
+            });
+        });
+
+        NeoForge.EVENT_BUS.register(new ModuleCustomiser());
     }
 
     private record InsertOnlyTrStorage(IEnergyStorage trStorage) implements MIEnergyStorage.NoExtract {
@@ -95,7 +195,7 @@ public class MIRouters
 
         @Override
         public long receive(long maxAmount, boolean simulate) {
-            return trStorage.receiveEnergy((int)Math.max(maxAmount, Integer.MAX_VALUE), simulate);
+            return trStorage.receiveEnergy((int) Math.max(maxAmount, Integer.MAX_VALUE), simulate);
         }
 
         @Override
@@ -120,6 +220,7 @@ public class MIRouters
         private long max, transferMax;
         // Initially anything should be able to connect
         private CableTier tier = null;
+
         public EnergyStorage(ModularRouterBlockEntity be) {
             this.be = be;
         }
@@ -146,7 +247,9 @@ public class MIRouters
                             be.setChanged();
                         }
                     }, () -> {
-                        stored = max = transferMax = 0;
+                        stored = 0;
+                        max = 0;
+                        transferMax = 0;
                         be.setChanged();
                     });
         }

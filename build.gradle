@@ -81,6 +81,7 @@ repositories {
     }
     maven { url "https://maven.shedaniel.me/" }
 }
+}
 
 dependencies {
     // Specify the version of Minecraft to use.
@@ -94,7 +95,8 @@ dependencies {
         transitive = false
     }
     implementation 'dev.technici4n:GrandPower:1.0.0'
-    implementation "curse.maven:modular-routers-250294:5258399"
+//    implementation "curse.maven:modular-routers-250294:5258399"
+    implementation 'me.desht.modularrouters:modular-routers:12.3.2+mc1.20.4'
     implementation("me.shedaniel.cloth:cloth-config-neoforge:13.0.121")
 
     // Example mod dependency with JEI
