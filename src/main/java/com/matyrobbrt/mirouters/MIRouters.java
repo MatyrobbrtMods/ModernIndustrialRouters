@@ -8,6 +8,7 @@ import com.matyrobbrt.mirouters.item.EUUpgrade;
 import me.desht.modularrouters.block.tile.ModularRouterBlockEntity;
 import me.desht.modularrouters.core.ModBlockEntities;
 import me.desht.modularrouters.core.ModItems;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.recipes.RecipeCategory;
@@ -64,7 +65,7 @@ public class MIRouters {
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<EnergyStorage>> STORAGE = ATTACHMENTS.register("eu_energy", () -> AttachmentType.builder((holder) -> new EnergyStorage((ModularRouterBlockEntity) holder))
             .serialize(new IAttachmentSerializer<>() {
                 @Override
-                public Tag write(EnergyStorage attachment) {
+                public Tag write(EnergyStorage attachment, HolderLookup.Provider provider) {
                     final CompoundTag tag = new CompoundTag();
                     tag.putLong("energy", attachment.getAmount());
                     tag.putString("tier", attachment.getTier().name);
@@ -72,7 +73,7 @@ public class MIRouters {
                 }
 
                 @Override
-                public EnergyStorage read(IAttachmentHolder holder, Tag tag) {
+                public EnergyStorage read(IAttachmentHolder holder, Tag tag, HolderLookup.Provider provider) {
                     final var storage = new EnergyStorage((ModularRouterBlockEntity) holder);
                     final var ctag = ((CompoundTag) tag);
                     storage.stored = ctag.getLong("energy");
@@ -92,15 +93,10 @@ public class MIRouters {
         }
 
         bus.addListener((final RegisterCapabilitiesEvent event) -> {
-            event.registerBlockEntity(EnergyApi.SIDED, ModBlockEntities.MODULAR_ROUTER.get(), (be, abc) -> {
-                if (be.getData(STORAGE).getCapacity() > 0) {
-                    return be.getData(STORAGE);
-                }
-                return new InsertOnlyTrStorage(be.getEnergyStorage());
-            });
+            event.registerBlockEntity(EnergyApi.SIDED, ModBlockEntities.MODULAR_ROUTER.get(), (be, $) -> be.getData(STORAGE));
         });
 
-        final var key = ResourceKey.create(Registries.CREATIVE_MODE_TAB, new ResourceLocation("modularrouters:default"));
+        final var key = ResourceKey.create(Registries.CREATIVE_MODE_TAB, ResourceLocation.parse("modularrouters:default"));
         bus.addListener((final BuildCreativeModeTabContentsEvent event) -> {
             if (event.getTabKey() == key) {
                 UPGRADES.forEach(event::accept);
@@ -129,7 +125,7 @@ public class MIRouters {
                 }
             });
 
-            event.getGenerator().addProvider(event.includeServer(), new RecipeProvider(event.getGenerator().getPackOutput()) {
+            event.getGenerator().addProvider(event.includeServer(), new RecipeProvider(event.getGenerator().getPackOutput(), event.getLookupProvider()) {
                 @Override
                 protected void buildRecipes(RecipeOutput output) {
                     ShapedRecipeBuilder.shaped(RecipeCategory.MISC, LV)
@@ -179,7 +175,7 @@ public class MIRouters {
                 }
 
                 private Item miItem(String name) {
-                    return BuiltInRegistries.ITEM.get(new ResourceLocation("modern_industrialization", name));
+                    return BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("modern_industrialization", name));
                 }
             });
         });
@@ -187,36 +183,11 @@ public class MIRouters {
         NeoForge.EVENT_BUS.register(new ModuleCustomiser());
     }
 
-    private record InsertOnlyTrStorage(IEnergyStorage trStorage) implements MIEnergyStorage.NoExtract {
-        @Override
-        public boolean canConnect(CableTier cableTier) {
-            return true;
-        }
-
-        @Override
-        public long receive(long maxAmount, boolean simulate) {
-            return trStorage.receiveEnergy((int) Math.max(maxAmount, Integer.MAX_VALUE), simulate);
-        }
-
-        @Override
-        public boolean canReceive() {
-            return true;
-        }
-
-        @Override
-        public long getAmount() {
-            return trStorage.getEnergyStored();
-        }
-
-        @Override
-        public long getCapacity() {
-            return trStorage.getMaxEnergyStored();
-        }
-    }
-
     public static class EnergyStorage implements MIEnergyStorage {
         private final ModularRouterBlockEntity be;
         public long stored;
+
+        // When max is zero default to using the FE energy storage
         private long max, transferMax;
         // Initially anything should be able to connect
         private CableTier tier = null;
@@ -234,6 +205,8 @@ public class MIRouters {
         }
 
         public void update() {
+            var oldMax = max;
+            var oldTier = tier;
             UPGRADES.stream()
                     .filter(eu -> be.getUpgradeCount(eu.value()) > 0)
                     .findFirst()
@@ -247,11 +220,17 @@ public class MIRouters {
                             be.setChanged();
                         }
                     }, () -> {
+                        tier = null;
                         stored = 0;
                         max = 0;
                         transferMax = 0;
                         be.setChanged();
                     });
+
+            if ((oldMax == 0 && max > 0) || oldTier != tier) {
+                be.invalidateCapabilities();
+                be.getLevel().updateNeighborsAt(be.getBlockPos(), be.getBlockState().getBlock());
+            }
         }
 
         @Override
@@ -261,6 +240,9 @@ public class MIRouters {
 
         @Override
         public long receive(long maxReceive, boolean simulate) {
+            if (max == 0) {
+                return be.getEnergyStorage().receiveEnergy((int) Math.max(maxReceive, Integer.MAX_VALUE), simulate);
+            }
             long amount = Math.min(maxReceive, Math.min(max - stored, transferMax));
             if (amount < 0) return 0;
             if (!simulate) {
@@ -283,12 +265,12 @@ public class MIRouters {
 
         @Override
         public long getAmount() {
-            return stored;
+            return max == 0 ? be.getEnergyStorage().getEnergyStored() : stored;
         }
 
         @Override
         public long getCapacity() {
-            return max;
+            return max == 0 ? be.getEnergyStorage().getMaxEnergyStored() : max;
         }
 
         @Override

@@ -3,7 +3,7 @@
   "category": "misc",
   "key": {
     "C": {
-      "item": "modern_industrialization:electrum_cable"
+      "item": "modern_industrialization:tin_cable"
     },
     "U": {
       "item": "modularrouters:energy_upgrade"
@@ -15,6 +15,7 @@
     "CCC"
   ],
   "result": {
-    "item": "modernindustrialrouters:mv_upgrade"
+    "count": 1,
+    "id": "modernindustrialrouters:lv_upgrade"
   }
 }

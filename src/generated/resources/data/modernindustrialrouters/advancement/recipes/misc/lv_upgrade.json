@@ -5,9 +5,7 @@
       "conditions": {
         "items": [
           {
-            "items": [
-              "modularrouters:energy_upgrade"
-            ]
+            "items": "modularrouters:energy_upgrade"
           }
         ]
       },
@@ -15,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "modernindustrialrouters:ev_upgrade"
+        "recipe": "modernindustrialrouters:lv_upgrade"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -28,7 +26,7 @@
   ],
   "rewards": {
     "recipes": [
-      "modernindustrialrouters:ev_upgrade"
+      "modernindustrialrouters:lv_upgrade"
     ]
   }
 }

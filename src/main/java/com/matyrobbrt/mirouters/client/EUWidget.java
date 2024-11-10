@@ -10,7 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
 public class EUWidget extends AbstractWidget {
-    public static final ResourceLocation TEXTURE_LOCATION = new ResourceLocation("modern_industrialization:textures/gui/container/slot_atlas.png");
+    public static final ResourceLocation TEXTURE_LOCATION = ResourceLocation.parse("modern_industrialization:textures/gui/container/slot_atlas.png");
 
     private final IEnergyStorage storage;
     public EUWidget(IEnergyStorage storage, int pX, int pY) {

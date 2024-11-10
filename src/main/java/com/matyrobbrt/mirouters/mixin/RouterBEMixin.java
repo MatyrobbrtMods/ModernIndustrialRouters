@@ -3,6 +3,7 @@ package com.matyrobbrt.mirouters.mixin;
 import com.matyrobbrt.mirouters.MIRouters;
 import me.desht.modularrouters.block.tile.ModularRouterBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -19,7 +20,7 @@ public abstract class RouterBEMixin extends BlockEntity {
     }
 
     @Inject(at = @At("TAIL"), method = "processClientSync")
-    private void updateEUClientSync(CompoundTag compound, CallbackInfo ci) {
+    private void updateEUClientSync(CompoundTag compound, HolderLookup.Provider provider, CallbackInfo ci) {
         getData(MIRouters.STORAGE).update();
         level.invalidateCapabilities(worldPosition);
     }
@@ -27,6 +28,5 @@ public abstract class RouterBEMixin extends BlockEntity {
     @Inject(method = "compileUpgrades", at = @At(value = "INVOKE", target = "Lme/desht/modularrouters/block/tile/ModularRouterBlockEntity$RouterEnergyBuffer;updateForEnergyUpgrades(I)V", shift = At.Shift.AFTER))
     private void compileEU(CallbackInfo ci) {
         getData(MIRouters.STORAGE).update();
-        level.invalidateCapabilities(worldPosition);
     }
 }

@@ -8,9 +8,12 @@ import me.desht.modularrouters.api.event.RegisterRouterContainerData;
 import me.desht.modularrouters.core.ModItems;
 import me.desht.modularrouters.logic.ModuleTarget;
 import me.desht.modularrouters.util.BeamData;
+import me.desht.modularrouters.util.MiscUtil;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.inventory.DataSlot;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.capabilities.BlockCapability;
 
 import java.util.List;
 
@@ -20,7 +23,7 @@ public class ModuleCustomiser {
         if (event.getModule().getModule() == ModItems.ENERGY_OUTPUT_MODULE.value()) {
             var routerStorage = event.getRouter().getData(MIRouters.STORAGE);
             if (event.getModule().getTarget() != null && routerStorage.getCapacity() > 0) {
-                MIEnergyStorage otherStorage = event.getModule().getTarget().getCapability(EnergyApi.SIDED, event.getModule().getTarget().face);
+                MIEnergyStorage otherStorage = getCapability(event.getModule().getTarget(), EnergyApi.SIDED, event.getModule().getTarget().face);
                 if (otherStorage != null && otherStorage.canConnect(routerStorage.getTier())) {
                     event.setExecuted(EnergyStorageUtil.move(routerStorage, otherStorage, routerStorage.getTransferRate()) > 0);
                 }
@@ -38,11 +41,11 @@ public class ModuleCustomiser {
                     boolean doBeam = event.getRouter().getUpgradeCount(ModItems.MUFFLER_UPGRADE.get()) < 2;
                     long total = 0;
                     for (ModuleTarget target : inRange) {
-                        MIEnergyStorage otherStorage = target.getCapability(EnergyApi.SIDED, target.face);
+                        MIEnergyStorage otherStorage = getCapability(target, EnergyApi.SIDED, target.face);
                         if (otherStorage != null && otherStorage.canConnect(routerStorage.getTier())) {
                             long sent = EnergyStorageUtil.move(routerStorage, otherStorage, toSend);
                             if (sent > 0 && doBeam) {
-                                event.getRouter().addItemBeam(new BeamData(event.getRouter().getTickRate(), target.gPos.pos(), 0xE04040));
+                                event.getRouter().addItemBeam(new BeamData.Builder(event.getRouter(), target.gPos.pos(), 0xE04040).build());
                             }
                             total += sent;
                         }
@@ -57,7 +60,7 @@ public class ModuleCustomiser {
     @SubscribeEvent
     public void registerMenu(final RegisterRouterContainerData event) {
         final var router = event.getRouter();
-        event.register(new ResourceLocation(MIRouters.MOD_ID, "eu"), new DataSlot() {
+        event.register(ResourceLocation.fromNamespaceAndPath(MIRouters.MOD_ID, "eu"), new DataSlot() {
             // TODO - fix to actually be longs
             @Override
             public int get() {
@@ -69,5 +72,13 @@ public class ModuleCustomiser {
                 router.getData(MIRouters.STORAGE).stored = pValue;
             }
         });
+    }
+
+    private static <T, C> T getCapability(ModuleTarget target, BlockCapability<T, C> cap, C cont) {
+        ServerLevel level = MiscUtil.getWorldForGlobalPos(target.gPos);
+        if (level == null) {
+            return null;
+        }
+        return level.getCapability(cap, target.gPos.pos(), cont);
     }
 }

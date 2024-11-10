@@ -3,7 +3,7 @@
   "category": "misc",
   "key": {
     "C": {
-      "item": "modern_industrialization:annealed_copper_cable"
+      "item": "modern_industrialization:electrum_cable"
     },
     "U": {
       "item": "modularrouters:energy_upgrade"
@@ -15,6 +15,7 @@
     "CCC"
   ],
   "result": {
-    "item": "modernindustrialrouters:ev_upgrade"
+    "count": 1,
+    "id": "modernindustrialrouters:mv_upgrade"
   }
 }
