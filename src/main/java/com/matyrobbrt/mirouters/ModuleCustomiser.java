@@ -22,7 +22,7 @@ public class ModuleCustomiser {
     public void onModule(ExecuteModuleEvent event) {
         if (event.getModule().getModule() == ModItems.ENERGY_OUTPUT_MODULE.value()) {
             var routerStorage = event.getRouter().getData(MIRouters.STORAGE);
-            if (event.getModule().getTarget() != null && routerStorage.getCapacity() > 0) {
+            if (event.getModule().getTarget() != null && routerStorage.getCapacity() > 0 && routerStorage.getTier() != null) {
                 MIEnergyStorage otherStorage = getCapability(event.getModule().getTarget(), EnergyApi.SIDED, event.getModule().getTarget().face);
                 if (otherStorage != null && otherStorage.canConnect(routerStorage.getTier())) {
                     event.setExecuted(EnergyStorageUtil.move(routerStorage, otherStorage, routerStorage.getTransferRate()) > 0);
@@ -31,7 +31,7 @@ public class ModuleCustomiser {
             }
         } else if (event.getModule().getModule() == ModItems.ENERGY_DISTRIBUTOR_MODULE.value()) {
             var routerStorage = event.getRouter().getData(MIRouters.STORAGE);
-            if (routerStorage.getCapacity() > 0) {
+            if (routerStorage.getCapacity() > 0 && routerStorage.getTier() != null) {
                 List<ModuleTarget> inRange = event.getModule().getTargets().stream()
                         .filter((targetx) -> targetx.isSameWorld(event.getRouter().getLevel()) && event.getRouter().getBlockPos().distSqr(targetx.gPos.pos()) <= (double) event.getModule().getRangeSquared())
                         .toList();

@@ -125,6 +125,7 @@ dependencies {
         transitive = false
     }
     implementation("me.shedaniel.cloth:cloth-config-neoforge:15.0.140")
+    runtimeOnly('mekanism:Mekanism:1.21.1-10.7.7.64')
     runtimeOnly('mezz.jei:jei-1.21.1-neoforge:19.21.0.247')
 }
 
