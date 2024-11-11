@@ -68,7 +68,11 @@ public class MIRouters {
                 public Tag write(EnergyStorage attachment, HolderLookup.Provider provider) {
                     final CompoundTag tag = new CompoundTag();
                     tag.putLong("energy", attachment.getAmount());
-                    tag.putString("tier", attachment.getTier().name);
+                    
+                    final CableTier tier = attachment.getTier();
+                    if (tier != null) {
+                        tag.putString("tier", tier.name);
+                    }
                     return tag;
                 }
 
