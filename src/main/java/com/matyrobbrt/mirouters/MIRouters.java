@@ -245,7 +245,7 @@ public class MIRouters {
         @Override
         public long receive(long maxReceive, boolean simulate) {
             if (max == 0) {
-                return be.getEnergyStorage().receiveEnergy((int) Math.max(maxReceive, Integer.MAX_VALUE), simulate);
+                return be.getEnergyStorage().receiveEnergy((int) Math.min(maxReceive, Integer.MAX_VALUE), simulate);
             }
             long amount = Math.min(maxReceive, Math.min(max - stored, transferMax));
             if (amount < 0) return 0;
