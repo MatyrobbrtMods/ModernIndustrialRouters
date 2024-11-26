@@ -31,7 +31,6 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
-import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -184,7 +183,7 @@ public class MIRouters {
             });
         });
 
-        NeoForge.EVENT_BUS.register(new ModuleCustomiser());
+        NeoForge.EVENT_BUS.register(ModuleCustomiser.class);
     }
 
     public static class EnergyStorage implements MIEnergyStorage {

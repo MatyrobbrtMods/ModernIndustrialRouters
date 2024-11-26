@@ -22,7 +22,6 @@ repositories {
         url 'https://modmaven.dev/'
     }
     maven { url "https://maven.shedaniel.me/" }
-
 }
 
 base {
@@ -36,6 +35,8 @@ neoForge {
     // Specify the version of NeoForge to use.
     version = project.neo_version
 
+    addModdingDependenciesTo(sourceSets.test)
+
     parchment {
         mappingsVersion = project.parchment_mappings_version
         minecraftVersion = project.parchment_minecraft_version
@@ -48,24 +49,31 @@ neoForge {
     // These can be tweaked, removed, or duplicated as needed.
     runs {
         client {
+            sourceSet = sourceSets.test
+
             client()
 
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'mirtest'
         }
 
         server {
+            sourceSet = sourceSets.test
+
             server()
             programArgument '--nogui'
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'mirtest'
         }
 
         // This run config launches GameTestServer and runs all registered gametests, then exits.
         // By default, the server will crash when no gametests are provided.
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
+            sourceSet = sourceSets.test
+
             type = "gameTestServer"
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            gameDirectory = project.file('run/gametest')
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'mirtest'
         }
 
         data {
@@ -102,6 +110,9 @@ neoForge {
         "${mod_id}" {
             sourceSet(sourceSets.main)
         }
+        "${mod_id}test" {
+            sourceSet(sourceSets.test)
+        }
     }
 }
 
@@ -121,9 +132,19 @@ dependencies {
         transitive = false
     }
     implementation 'dev.technici4n:GrandPower:3.0.0'
-    implementation('me.desht.modularrouters:modular-routers:13.1.0+mc1.21.1') {
+
+    final mrRouters = '13.2.0+mc1.21.1'
+    implementation("me.desht.modularrouters:modular-routers:$mrRouters") {
         transitive = false
     }
+    testImplementation("me.desht.modularrouters:modular-routers:$mrRouters") {
+        transitive = false
+        capabilities {
+            requireCapability('me.desht.modularrouters:modular-routers-test-utils')
+        }
+    }
+    testImplementation("net.neoforged:testframework:$project.neo_version")
+
     implementation("me.shedaniel.cloth:cloth-config-neoforge:15.0.140")
     runtimeOnly('mekanism:Mekanism:1.21.1-10.7.7.64')
     runtimeOnly('mezz.jei:jei-1.21.1-neoforge:19.21.0.247')

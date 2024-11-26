@@ -9,23 +9,29 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
+import java.util.function.BooleanSupplier;
+
 public class EUWidget extends AbstractWidget {
     public static final ResourceLocation TEXTURE_LOCATION = ResourceLocation.parse("modern_industrialization:textures/gui/container/slot_atlas.png");
 
     private final IEnergyStorage storage;
-    public EUWidget(IEnergyStorage storage, int pX, int pY) {
+    private final BooleanSupplier render;
+    public EUWidget(IEnergyStorage storage, int pX, int pY, BooleanSupplier render) {
         super(pX, pY, 13, 18, Component.empty());
         this.storage = storage;
+        this.render = render;
     }
 
     @Override
     protected void renderWidget(GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
-        int amount = this.getScaled();
-        graphics.blit(TEXTURE_LOCATION, this.getX(), this.getY(), 230.0F, 0.0F, this.width, this.height, 256, 256);
-        graphics.blit(TEXTURE_LOCATION, this.getX(), this.getY() + 18 - amount, 243.0F, 18 - amount, this.width, amount, 256, 256);
-        if (this.isHovered()) {
-            Component text = Component.literal(MiscUtil.commify(this.storage.getEnergyStored()) + " / " + MiscUtil.commify(this.storage.getMaxEnergyStored()) + " EU");
-            graphics.renderTooltip(Minecraft.getInstance().font, text, pMouseX, pMouseY);
+        if (render.getAsBoolean()) {
+            int amount = this.getScaled();
+            graphics.blit(TEXTURE_LOCATION, this.getX(), this.getY(), 230.0F, 0.0F, this.width, this.height, 256, 256);
+            graphics.blit(TEXTURE_LOCATION, this.getX(), this.getY() + 18 - amount, 243.0F, 18 - amount, this.width, amount, 256, 256);
+            if (this.isHovered()) {
+                Component text = Component.literal(MiscUtil.commify(this.storage.getEnergyStored()) + " / " + MiscUtil.commify(this.storage.getMaxEnergyStored()) + " EU");
+                graphics.renderTooltip(Minecraft.getInstance().font, text, pMouseX, pMouseY);
+            }
         }
     }
 
