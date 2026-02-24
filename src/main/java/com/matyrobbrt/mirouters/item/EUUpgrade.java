@@ -5,10 +5,8 @@ import com.matyrobbrt.mirouters.MIRouters;
 import me.desht.modularrouters.block.tile.ModularRouterBlockEntity;
 import me.desht.modularrouters.client.util.ClientUtil;
 import me.desht.modularrouters.client.util.TintColor;
-import me.desht.modularrouters.config.ConfigHolder;
 import me.desht.modularrouters.core.ModItems;
 import me.desht.modularrouters.item.upgrade.UpgradeItem;
-import me.desht.modularrouters.util.MiscUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -61,7 +59,7 @@ public class EUUpgrade extends UpgradeItem {
     }
 
     @Override
-    public int getStackLimit(int slot) {
+    public int getInstalledStackLimit() {
         return 64;
     }
 

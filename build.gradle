@@ -133,7 +133,7 @@ dependencies {
     }
     implementation 'dev.technici4n:GrandPower:3.0.0'
 
-    final mrRouters = '13.2.0+mc1.21.1'
+    final mrRouters = '13.2.4+mc1.21.1'
     implementation("me.desht.modularrouters:modular-routers:$mrRouters") {
         transitive = false
     }
